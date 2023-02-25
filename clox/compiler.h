@@ -8,6 +8,10 @@
 #ifndef compiler_h
 #define compiler_h
 
-void compile(const char * source);
+#include <stdbool.h>
+#include "vm.h"
+
+
+bool compile(const char * source, Chunk* chunk);
 
 #endif /* compiler_h */

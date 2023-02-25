@@ -69,8 +69,12 @@ static InterpretResult run() {
         uint8_t instruction;
         switch (instruction = READ_BYTE()) {
             case OP_CONSTANT: {
-                // remember that the seconde byte is the constant
-                // so we burn and print if for now
+                /*
+                 The first byte reads the instruction OP_CONSTANT
+                 the second byte (consumed by inside read constant
+                 contains the index where the constant gets stored.
+                 So this is like a 2 byte instruction.
+                 */
                 Value constant = READ_CONSTANT();
                 push(constant);
                 printValue(constant);
@@ -97,6 +101,18 @@ static InterpretResult run() {
 }
 
 InterpretResult interpret(const char *source) {
-    compile(source);
-    return INTERPRET_OK;
+    Chunk chunk;
+    initChunk(&chunk);
+    
+    if (!compile(source, &chunk)) {
+        freeChunk(&chunk);
+        return INTERPRET_COMPILE_ERROR;
+    }
+    
+    vm.chunk = &chunk;
+    vm.ip = vm.chunk->code;
+    
+    InterpretResult result = run();
+    freeChunk(&chunk);
+    return result;
 }
