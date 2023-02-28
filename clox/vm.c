@@ -102,16 +102,36 @@ static InterpretResult run() {
 
 InterpretResult interpret(const char *source) {
     Chunk chunk;
+    /*
+        Chunk is a set of instructions in terms of lifecycle it just
+        need to live while the function is active so no need to
+        alloc memory
+     */
+    
     initChunk(&chunk);
     
+    /*
+        Compiles the souce into the chunk. This is a one pass compiler:
+        - Scanning happens on demand. Tokens are requested on demand
+        - Parser "parses" which in this case means it compiles the source
+        into instructions bytes and inserts them in the right order into the chunk
+        - Instructions are 8bit (1byte) integer basically C enums
+     */
     if (!compile(source, &chunk)) {
         freeChunk(&chunk);
         return INTERPRET_COMPILE_ERROR;
     }
     
     vm.chunk = &chunk;
+    /*
+        Initializes the ip to the beginning of the chunk array
+        at this point the stack is still empty
+     */
     vm.ip = vm.chunk->code;
     
+    /*
+        The VM processes these chunks in order using a stack
+     */
     InterpretResult result = run();
     freeChunk(&chunk);
     return result;

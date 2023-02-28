@@ -25,6 +25,10 @@ typedef struct {
 
 Parser parser;
 
+/*
+ These need to be in order of precedence otherwise
+ some of the tricks used by the main function won't work
+ */
 typedef enum {
     PREC_NONE,
     PREC_ASSIGNMENT,  // =
@@ -148,18 +152,60 @@ static void emitConstant(Value value) {
 }
 
 static void parsePrecedence(Precedence precedence) {
+    /*
+        This probably to get around off by 1 errors and to make
+        the other methods simpler
+     */
     advance();
+    /*
+     The actual token we care is the previous one in this case
+     if we're parsing 1 + 2:
+     - previous : Token(number) 1
+     - current  : Token(PLUS) +
+     */
     ParseFn prefixRule = getRule(parser.previous.type)->prefix;
     if (prefixRule == NULL) {
         error("Expected Expression");
         return;
     }
     
+    /*
+        for the 1 + 2 example the first expression is number
+        we call it number() -> just emits a constant instruction
+     */
     prefixRule();
     
-    while (precedence <= getRule(parser.current.type)->precedence) {
+    /*
+        We now do the check on current? Again probably to off by 1 and get simplify things
+        token is + and is infix.
+     */
+    
+    /*
+     typedef enum {
+         PREC_NONE,
+         PREC_ASSIGNMENT,  // =
+         PREC_OR,          // or
+         PREC_AND,         // and
+         PREC_EQUALITY,    // == !=
+         PREC_COMPARISON,  // < > <= >=
+         PREC_TERM,        // + -
+         PREC_FACTOR,      // * /
+         PREC_UNARY,       // ! -
+         PREC_CALL,        // . ()
+         PREC_PRIMARY
+     } Precedence;
+    */
+    
+    while (getRule(parser.current.type)->precedence > precedence){
+        /*
+            previous = +
+            current = 2
+        */
         advance();
         ParseFn infixRule = getRule(parser.previous.type)->infix;
+        /*
+            we call the infix rule which in this case if binary
+         */
         infixRule();
     }
 }
@@ -187,8 +233,15 @@ static void unary() {
 
 static void binary() {
     TokenType operatorType = parser.previous.type;
+    // this is a bit weird cuz getRule got us here in the first place
+    // he's also avoiding passing any argument so that we can make use
+    // of the function pointer.
+    // long story short we need to get the rule again just to determine the
+    // precedence
     ParseRule *rule = getRule(operatorType);
-//    compiles the actual right operan left + (right) <- this
+    // compiles the actual right operan left + (right) <- this
+    // this is the trick on this algo to make things left associative
+    printf("binary\n");
     parsePrecedence((Precedence)(rule->precedence + 1));
     
     switch (operatorType) {
@@ -202,6 +255,7 @@ static void binary() {
 
 static void number() {
     double value = strtod(parser.previous.start, NULL);
+    printf("number %f\n", value);
     emitConstant(value);
 }
 
@@ -210,9 +264,12 @@ static void number() {
     the TokenTypes.
     Each struct contains function pointers or a pointer
     to the function used to parse the given expression.
-    We'll then use the function got and call it with args
+    We'll use the function and call it with args
     It's equivalent to a dynamic send.
+ 
+    TOKEN = prefix |  infix  | precedence
  */
+
 ParseRule rules[] = {
   [TOKEN_LEFT_PAREN]    = {grouping, NULL,   PREC_NONE},
   [TOKEN_RIGHT_PAREN]   = {NULL,     NULL,   PREC_NONE},
@@ -253,6 +310,10 @@ ParseRule rules[] = {
   [TOKEN_VAR]           = {NULL,     NULL,   PREC_NONE},
   [TOKEN_WHILE]         = {NULL,     NULL,   PREC_NONE},
   [TOKEN_ERROR]         = {NULL,     NULL,   PREC_NONE},
+/*
+    Sentinel so that the algo does not explote when we do not have
+    more tokens.
+ */
   [TOKEN_EOF]           = {NULL,     NULL,   PREC_NONE},
 };
 
@@ -261,13 +322,21 @@ static ParseRule *getRule(TokenType type) {
 }
 
 bool compile(const char *source, Chunk *chunk) {
+    /*
+        Both start and current starts at the beginning of the source
+        start = source; current = source
+     */
     initScanner(source);
     compilingChunk = chunk;
     parser.panicMode = false;
     parser.hadError = false;
+    /*
+        Scans a token to get us started
+     */
     advance();
+    // parsing // compilation starts here
     expression();
-    consume(TOKEN_EOF, "Exprect end of expression.");
+    consume(TOKEN_EOF, "Expect end of expression.");
     endCompiler();
     return !parser.hadError;
 }

@@ -126,7 +126,7 @@ static Token number() {
 static bool isAlpha(char c) {
     return (c >= 'a' && c <= 'z') ||
         (c >= 'A' && c <= 'Z') ||
-        (c == '-');
+        (c == '_');
 }
 
 static TokenType checkKeyword(int start, int length, const char *rest, TokenType type) {
@@ -196,14 +196,17 @@ Token scanToken(void) {
         case ';': return makeToken(TOKEN_SEMICOLON);
         case ',': return makeToken(TOKEN_COMMA);
         case '.': return makeToken(TOKEN_DOT);
-        case '-': return makeToken(TOKEN_MINUS);
+        case '-': {
+            printf("minus token\n");
+            return makeToken(TOKEN_MINUS);
+        }
         case '+': return makeToken(TOKEN_PLUS);
         case '/': return makeToken(TOKEN_SLASH);
         case '*': return makeToken(TOKEN_STAR);
-        case '!': makeToken(match('=') ? TOKEN_BANG_EQUAL : TOKEN_BANG);
-        case '=': makeToken(match('=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL);
-        case '<': makeToken(match('=') ? TOKEN_LESS_EQUAL : TOKEN_LESS);
-        case '>': makeToken(match('>') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER);
+        case '!': return makeToken(match('=') ? TOKEN_BANG_EQUAL : TOKEN_BANG);
+        case '=': return makeToken(match('=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL);
+        case '<': return makeToken(match('=') ? TOKEN_LESS_EQUAL : TOKEN_LESS);
+        case '>': return makeToken(match('>') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER);
         case '"': return string();
     }
     

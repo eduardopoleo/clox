@@ -65,7 +65,9 @@ static char *readfile(const char *path) {
 }
 
 static void runFile(const char *path) {
+    // read the file
     char *source = readfile(path);
+    // VM interprets the contents of the file
     InterpretResult result = interpret(source);
     free(source);
     
