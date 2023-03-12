@@ -6,6 +6,7 @@
 //
 
 #include "debug.h"
+#include "scanner.h"
 
 void disassembleChunk(Chunk *chunk, char *name) {
     printf("== %s ==\n", name);
@@ -37,6 +38,61 @@ static int constantInstruction(const char *name, Chunk *chunk, int offset) {
     return offset + 2;
 }
 
+void printToken(Token token) {
+//    TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN,
+//    TOKEN_LEFT_BRACE, TOKEN_RIGHT_BRACE,
+//    TOKEN_COMMA, TOKEN_DOT, TOKEN_MINUS, TOKEN_PLUS,
+//    TOKEN_SEMICOLON, TOKEN_SLASH, TOKEN_STAR,
+//    // One or two character tokens.
+//    TOKEN_BANG, TOKEN_BANG_EQUAL,
+//    TOKEN_EQUAL, TOKEN_EQUAL_EQUAL,
+//    TOKEN_GREATER, TOKEN_GREATER_EQUAL,
+//    TOKEN_LESS, TOKEN_LESS_EQUAL,
+//    // Literals.
+//    TOKEN_IDENTIFIER, TOKEN_STRING, TOKEN_NUMBER,
+//    // Keywords.
+//    TOKEN_AND, TOKEN_CLASS, TOKEN_ELSE, TOKEN_ELSE,
+//    TOKEN_FOR, TOKEN_FUN, TOKEN_IF, TOKEN_NIL, TOKEN_OR,
+//    TOKEN_PRINT, TOKEN_RETURN, TOKEN_SUPER, TOKEN_THIS,
+//    TOKEN_TRUE, TOKEN_VAR, TOKEN_WHILE,
+//
+//    TOKEN_ERROR, TOKEN_EOF
+    switch(token.type) {
+        case TOKEN_NIL: printf("TOK_NIL\n"); break;
+        case TOKEN_LEFT_PAREN: printf("TOKEN_LEFT_PAREN\n"); break;
+        case TOKEN_RIGHT_PAREN: printf("TOKEN_RIGHT_PAREN\n"); break;
+        case TOKEN_LEFT_BRACE: printf("TOKEN_LEFT_BRACE\n"); break;
+        case TOKEN_RIGHT_BRACE: printf("TOKEN_RIGHT_BRACE\n"); break;
+        case TOKEN_COMMA: printf("TOKEN_COMMA\n"); break;
+        case TOKEN_DOT: printf("TOKEN_DOT\n"); break;
+        case TOKEN_MINUS: printf("TOKEN_MINUS\n"); break;
+        case TOKEN_PLUS: printf("TOKEN_PLUS\n"); break;
+        case TOKEN_SEMICOLON: printf("TOKEN_SEMICOLON\n"); break;
+        case TOKEN_SLASH: printf("TOKEN_SLASH\n"); break;
+        case TOKEN_BANG_EQUAL: printf("TOKEN_BANG_EQUAL\n"); break;
+        case TOKEN_GREATER: printf("TOKEN_GREATER\n"); break;
+        case TOKEN_GREATER_EQUAL: printf("TOKEN_GREATER_EQUAL\n"); break;
+        case TOKEN_LESS: printf("TOKEN_LESS\n"); break;
+        case TOKEN_LESS_EQUAL: printf("TOKEN_LESS_EQUAL\n"); break;
+        case TOKEN_STRING: printf("TOKEN_STRING\n"); break;
+        case TOKEN_NUMBER: printf("TOKEN_NUMBER\n"); break;
+        case TOKEN_AND: printf("TOKEN_AND\n"); break;
+        case TOKEN_CLASS: printf("TOKEN_CLASS\n"); break;
+        case TOKEN_ELSE: printf("TOKEN_ELSE\n"); break;
+        case TOKEN_FOR: printf("TOKEN_FOR\n"); break;
+        case TOKEN_FUN: printf("TOKEN_FUN\n"); break;
+        case TOKEN_IF: printf("TOKEN_IF\n"); break;
+        case TOKEN_OR: printf("TOKEN_OR\n"); break;
+        case TOKEN_PRINT: printf("TOKEN_PRINT\n"); break;
+        case TOKEN_RETURN: printf("TOKEN_RETURN\n"); break;
+        case TOKEN_SUPER: printf("TOKEN_SUPER\n"); break;
+        case TOKEN_THIS: printf("TOKEN_THIS\n"); break;
+        case TOKEN_TRUE: printf("TOKEN_TRUE\n"); break;
+        case TOKEN_VAR: printf("TOKEN_VAR\n"); break;
+        case TOKEN_WHILE: printf("TOKEN_WHILE\n"); break;
+    }
+}
+
 int disassembleInstruction(Chunk *chunk, int offset) {
 //  offset so where is the instruction located in the array of code
     printf("%04d ", offset);
@@ -58,14 +114,28 @@ int disassembleInstruction(Chunk *chunk, int offset) {
             return simpleInstruction("OP_RETURN\n", offset);
         case OP_NEGATE:
             return simpleInstruction("OP_NEGATE", offset);
+        case OP_EQUAL:
+            return simpleInstruction("OP_EQUAL", offset);
+        case OP_GREATER:
+            return simpleInstruction("OP_GREATER", offset);
+        case OP_LESS:
+            return simpleInstruction("OP_LESS", offset);
         case OP_ADD:
             return simpleInstruction("OP_ADD", offset);
         case OP_SUBTRACT:
-            return simpleInstruction("OP_ADD", offset);
+            return simpleInstruction("OP_SUBTRACT", offset);
         case OP_MULTIPLY:
-            return simpleInstruction("OP_ADD", offset);
+            return simpleInstruction("OP_MULTIPLY", offset);
         case OP_DIVIDE:
-            return simpleInstruction("OP_ADD", offset);
+            return simpleInstruction("OP_DIVIDE", offset);
+        case OP_NIL:
+            return simpleInstruction("OP_NIL", offset);
+        case OP_TRUE:
+            return simpleInstruction("OP_TRUE", offset);
+        case OP_FALSE:
+            return simpleInstruction("OP_FALSE", offset);
+        case OP_NOT:
+            return simpleInstruction("OP_NOT", offset);
         default:
             printf("Unknown op code %d\n", instruction);
             return offset + 1;

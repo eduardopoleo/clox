@@ -130,8 +130,11 @@ static bool isAlpha(char c) {
 }
 
 static TokenType checkKeyword(int start, int length, const char *rest, TokenType type) {
-    if (scanner.current - scanner.start == start + length &&
-        memcmp(scanner.start +start, rest, length)) {
+    printf("bool comp %d\n", memcmp(scanner.start + start, rest, length));
+
+    if ((scanner.current - scanner.start) == (start + length) &&
+        memcmp(scanner.start + start, rest, length) == 0) {
+        printf("got here 2\n");
         return type;
     }
 

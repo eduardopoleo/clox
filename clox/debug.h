@@ -10,7 +10,10 @@
 
 #include <stdio.h>
 #include "chunk.h"
+#include "scanner.h"
 
 void disassembleChunk(Chunk *chunk, char *name);
 int disassembleInstruction(Chunk *chunk, int offset);
+void printToken(Token token);
+
 #endif /* debug_h */

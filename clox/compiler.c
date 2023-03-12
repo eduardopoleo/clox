@@ -163,8 +163,12 @@ static void parsePrecedence(Precedence precedence) {
      - previous : Token(number) 1
      - current  : Token(PLUS) +
      */
+    
+//    printToken(parser.previous);
     ParseFn prefixRule = getRule(parser.previous.type)->prefix;
     if (prefixRule == NULL) {
+        printf("broken token %d: \n", parser.previous.type);
+        printToken(parser.previous);
         error("Expected Expression");
         return;
     }
@@ -196,6 +200,9 @@ static void parsePrecedence(Precedence precedence) {
      } Precedence;
     */
     
+//    printf("infix: ");
+//    printToken(parser.current);
+
     while (getRule(parser.current.type)->precedence > precedence){
         /*
             previous = +
@@ -223,10 +230,11 @@ static void grouping() {
 static void unary() {
     TokenType operatorType = parser.previous.type;
 //    compiles the actual operand -(operand)
-    parsePrecedence(PREC_UNARY);
+    parsePrecedence(PREC_UNARY - 1);
     
     switch(operatorType) {
         case TOKEN_MINUS: emitByte(OP_NEGATE); break;
+        case TOKEN_BANG: emitByte(OP_NOT); break;
         default: return;
     }
 }
@@ -241,10 +249,15 @@ static void binary() {
     ParseRule *rule = getRule(operatorType);
     // compiles the actual right operan left + (right) <- this
     // this is the trick on this algo to make things left associative
-    printf("binary\n");
-    parsePrecedence((Precedence)(rule->precedence + 1));
+    parsePrecedence((Precedence)(rule->precedence));
     
     switch (operatorType) {
+        case TOKEN_BANG_EQUAL: emitBytes(OP_EQUAL, OP_NOT); break;
+        case TOKEN_EQUAL_EQUAL: emitByte(OP_EQUAL); break;
+        case TOKEN_GREATER: emitByte(OP_GREATER); break;
+        case TOKEN_GREATER_EQUAL: emitBytes(OP_LESS, OP_NOT); break;
+        case TOKEN_LESS: emitByte(OP_LESS); break;
+        case TOKEN_LESS_EQUAL: emitBytes(OP_GREATER, OP_NOT); break;
         case TOKEN_PLUS: emitByte(OP_ADD); break;
         case TOKEN_MINUS: emitByte(OP_SUBTRACT); break;
         case TOKEN_STAR: emitByte(OP_MULTIPLY); break;
@@ -253,10 +266,17 @@ static void binary() {
     }
 }
 
+static void literal() {
+    switch (parser.previous.type) {
+        case TOKEN_FALSE: emitByte(OP_FALSE); break;
+        case TOKEN_NIL: emitByte(OP_NIL); break;
+        case TOKEN_TRUE: emitByte(OP_TRUE); break;
+    }
+}
+
 static void number() {
     double value = strtod(parser.previous.start, NULL);
-    printf("number %f\n", value);
-    emitConstant(value);
+    emitConstant(NUMBER_VAL(value));
 }
 
 /*
@@ -270,6 +290,63 @@ static void number() {
     TOKEN = prefix |  infix  | precedence
  */
 
+/*
+    The most important thing here is that:
+ - We have two type of expressions: led, nud
+    - led (e.g infix + sum) expect something on the left
+    - nud (e.g prefix - negate) do not expect any thing on the left
+- Each of these expression also have some precedence
+- We can define the table like this and then attribute every symbol
+to the corresponding function that handles it dependeing on the case
+- Precencende is taken into consideration in the algo as well
+- The douglas craford vids the main difference is that he goes
+a step forward and builds a DSL to construct this table. In this book
+that would be a bit harder cuz we're using C. In fact he does not even
+use a hash cuz an array is faster and easier to deal with here.
+- Another interesting thing here to note is that we do no build a syntax tree
+instead we produce byte code at the same time we parse the expression.
+ 
+Now let's analyze the expression 2 + 3 * 4 to understand how all
+- Read file
+- Init chunk
+ - A dynamic array contaning a list of byte instructions and constants
+- Compile
+ - init scanner
+ - Parse starts -> call to expression with lowest precedence
+    - Precedence enums
+    - Parse precedence
+        - executes the PREFIX rule for first token
+        - execute INFIX rule of next token
+            - whille current token precedence is higher than given precedence
+    - parse_precedence(assignment)
+        - Prefix Token 2 -> number
+            - EMIT OP_CONSTANT 2
+        - Infix  Token + -> binary
+            parse_precedence(PREC_TERM + 1) to make parsing left associative
+                - Prefix Token 3 -> number
+                    - EMIT OP_CONSTANT 3
+                - Infix Token * -> binary
+                    - parse_precedence(PREC_FACTOR + 1)
+                        - Prefix Token 4 -> number
+                            - EMIT OP CONSTANT 4
+                        - Infix (PREC_NONE < PREC_FACTOR)
+                            - noop
+                    - EMIT OP MULTIPLU
+            EMIT OP ADD
+        Done
+
+Why was the bug happening on 2 + 3 * 4 = 20?
+ 
+getRule(parser.current.type)->precedence > precedence
+ParsePrecedence
+    Prefix
+     - EMIT OP CONSTANT 2
+    Infix(+)
+        ParsePrecedence(TERM+1)
+            Prefix
+                - EMIT OP CONSTANT 3
+            Infix TERM+1 == FACTOR not bigger. infix(+) was not fully processed
+*/
 ParseRule rules[] = {
   [TOKEN_LEFT_PAREN]    = {grouping, NULL,   PREC_NONE},
   [TOKEN_RIGHT_PAREN]   = {NULL,     NULL,   PREC_NONE},
@@ -282,31 +359,31 @@ ParseRule rules[] = {
   [TOKEN_SEMICOLON]     = {NULL,     NULL,   PREC_NONE},
   [TOKEN_SLASH]         = {NULL,     binary, PREC_FACTOR},
   [TOKEN_STAR]          = {NULL,     binary, PREC_FACTOR},
-  [TOKEN_BANG]          = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_BANG_EQUAL]    = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_EQUAL]         = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_EQUAL_EQUAL]   = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_GREATER]       = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_GREATER_EQUAL] = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_LESS]          = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_LESS_EQUAL]    = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_BANG]          = {unary,    NULL,   PREC_NONE},
+  [TOKEN_BANG_EQUAL]    = {NULL,     binary, PREC_EQUALITY},
+  [TOKEN_EQUAL]         = {NULL,     binary, PREC_EQUALITY},
+  [TOKEN_EQUAL_EQUAL]   = {NULL,     binary, PREC_COMPARISON},
+  [TOKEN_GREATER]       = {NULL,     binary, PREC_COMPARISON},
+  [TOKEN_GREATER_EQUAL] = {NULL,     binary, PREC_COMPARISON},
+  [TOKEN_LESS]          = {NULL,     binary, PREC_COMPARISON},
+  [TOKEN_LESS_EQUAL]    = {NULL,     binary, PREC_COMPARISON},
   [TOKEN_IDENTIFIER]    = {NULL,     NULL,   PREC_NONE},
   [TOKEN_STRING]        = {NULL,     NULL,   PREC_NONE},
   [TOKEN_NUMBER]        = {number,   NULL,   PREC_NONE},
   [TOKEN_AND]           = {NULL,     NULL,   PREC_NONE},
   [TOKEN_CLASS]         = {NULL,     NULL,   PREC_NONE},
   [TOKEN_ELSE]          = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_FALSE]         = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_FALSE]         = {literal,  NULL,   PREC_NONE},
   [TOKEN_FOR]           = {NULL,     NULL,   PREC_NONE},
   [TOKEN_FUN]           = {NULL,     NULL,   PREC_NONE},
   [TOKEN_IF]            = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_NIL]           = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_NIL]           = {literal,  NULL,   PREC_NONE},
   [TOKEN_OR]            = {NULL,     NULL,   PREC_NONE},
   [TOKEN_PRINT]         = {NULL,     NULL,   PREC_NONE},
   [TOKEN_RETURN]        = {NULL,     NULL,   PREC_NONE},
   [TOKEN_SUPER]         = {NULL,     NULL,   PREC_NONE},
   [TOKEN_THIS]          = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_TRUE]          = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_TRUE]          = {literal,  NULL,   PREC_NONE},
   [TOKEN_VAR]           = {NULL,     NULL,   PREC_NONE},
   [TOKEN_WHILE]         = {NULL,     NULL,   PREC_NONE},
   [TOKEN_ERROR]         = {NULL,     NULL,   PREC_NONE},
