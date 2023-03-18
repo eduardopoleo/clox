@@ -8,6 +8,16 @@
 #ifndef memory_h
 #define memory_h
 
+#include "common.h"
+
+/*
+    A wrapper around reallocate to do first allocation where,
+    - we do not have initial pointer so NULL
+    - initial size is 0
+*/
+#define ALLOCATE(type, count) \
+    (type*)reallocate(NULL, 0, sizeof(type) * count)
+
 // Not sure why this isn't just a method
 #define GROW_CAPACITY(capacity) \
     capacity < 8 ? 8 : capacity * 2

@@ -279,6 +279,21 @@ static void number() {
     emitConstant(NUMBER_VAL(value));
 }
 
+static void string() {
+    /*
+        takes the string lexeme from the actual code and dumps it into the
+        value representation, as oppose to carry the annoying start, length
+        notation all the way to the end.
+        Moreover, doing this allows you to better handle the case where you have
+        dynamic strings that are created at runtime as the result of concatenating
+        strings etc.
+     */
+    emitConstant(OBJ_VAL(copyString(
+        parser.previous.start + 1, // character starts after first "
+        parser.previous.length - 2 // length -2 removes the two ""
+    )));
+}
+
 /*
     Array of ParseRules structs. It's indexed using
     the TokenTypes.
@@ -368,7 +383,7 @@ ParseRule rules[] = {
   [TOKEN_LESS]          = {NULL,     binary, PREC_COMPARISON},
   [TOKEN_LESS_EQUAL]    = {NULL,     binary, PREC_COMPARISON},
   [TOKEN_IDENTIFIER]    = {NULL,     NULL,   PREC_NONE},
-  [TOKEN_STRING]        = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_STRING]        = {string,     NULL,   PREC_NONE},
   [TOKEN_NUMBER]        = {number,   NULL,   PREC_NONE},
   [TOKEN_AND]           = {NULL,     NULL,   PREC_NONE},
   [TOKEN_CLASS]         = {NULL,     NULL,   PREC_NONE},

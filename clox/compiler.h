@@ -9,6 +9,7 @@
 #define compiler_h
 
 #include <stdbool.h>
+#include "object.h"
 #include "vm.h"
 
 

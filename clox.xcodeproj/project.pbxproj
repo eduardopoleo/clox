@@ -16,6 +16,7 @@
 		A013740E29A10BC00065EB9C /* vm.c in Sources */ = {isa = PBXBuildFile; fileRef = A013740D29A10BC00065EB9C /* vm.c */; };
 		A013741129A3EC1E0065EB9C /* compiler.c in Sources */ = {isa = PBXBuildFile; fileRef = A013741029A3EC1E0065EB9C /* compiler.c */; };
 		A013741429A3ECDB0065EB9C /* scanner.c in Sources */ = {isa = PBXBuildFile; fileRef = A013741329A3ECDB0065EB9C /* scanner.c */; };
+		A013742D29C62D550065EB9C /* object.c in Sources */ = {isa = PBXBuildFile; fileRef = A013742C29C62D550065EB9C /* object.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -49,6 +50,8 @@
 		A013741029A3EC1E0065EB9C /* compiler.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = compiler.c; sourceTree = "<group>"; };
 		A013741229A3ECDB0065EB9C /* scanner.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = scanner.h; sourceTree = "<group>"; };
 		A013741329A3ECDB0065EB9C /* scanner.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = scanner.c; sourceTree = "<group>"; };
+		A013742B29C62D550065EB9C /* object.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = object.h; sourceTree = "<group>"; };
+		A013742C29C62D550065EB9C /* object.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = object.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -81,6 +84,8 @@
 		A01373EF299FD9170065EB9C /* clox */ = {
 			isa = PBXGroup;
 			children = (
+				A013742B29C62D550065EB9C /* object.h */,
+				A013742C29C62D550065EB9C /* object.c */,
 				A013740A29A016A40065EB9C /* value.c */,
 				A013740F29A3EC1E0065EB9C /* compiler.h */,
 				A013741029A3EC1E0065EB9C /* compiler.c */,
@@ -161,6 +166,7 @@
 			files = (
 				A01373FC299FDA790065EB9C /* common.c in Sources */,
 				A013741429A3ECDB0065EB9C /* scanner.c in Sources */,
+				A013742D29C62D550065EB9C /* object.c in Sources */,
 				A0137408299FE6060065EB9C /* debug.c in Sources */,
 				A01373F1299FD9170065EB9C /* main.c in Sources */,
 				A013740B29A016A40065EB9C /* value.c in Sources */,

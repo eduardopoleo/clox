@@ -8,6 +8,10 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdarg.h>
+#include <string.h>
+
+#include "memory.h"
+#include "object.h"
 #include "common.h"
 #include "compiler.h"
 #include "debug.h"
@@ -66,6 +70,27 @@ static Value peek(int distance) {
 
 static bool isFalsey(Value value) {
     return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
+}
+
+static void concatenate() {
+    // props both values from the stack
+    ObjString* b = AS_STRING(pop());
+    ObjString* a = AS_STRING(pop());
+    
+    // the new length is the sum of both strings
+    int length = a->length + b->length;
+    // allocates mem for the combined string + a bit more
+    char *chars = ALLOCATE(char, length + 1);
+    
+    // copies the a string into the first piece
+    memcpy(chars, a->chars, a->length);
+    // copies the b string starting after where a ended
+    memcpy(chars + a->length, b->chars, b->length);\
+    // finishes the string
+    chars[length] = '\0';
+
+    ObjString *result = takeString(chars, length);
+    push(OBJ_VAL(result));
 }
 
 static InterpretResult run() {
@@ -134,7 +159,19 @@ static InterpretResult run() {
                 push(NUMBER_VAL(-AS_NUMBER(pop())));
                 break;
             }
-            case OP_ADD:      BINARY_OP(NUMBER_VAL, +); break;
+            case OP_ADD: {
+                if (IS_STRING(peek(0)) && IS_STRING(peek(1))) {
+                    concatenate();
+                } else if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) {
+                    double b = AS_NUMBER(pop());
+                    double a = AS_NUMBER(pop());
+                    push(NUMBER_VAL(a + b));
+                } else {
+                    runtimeError("Operands must be two numbers or two strings.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                break;
+            }
             case OP_SUBTRACT: BINARY_OP(NUMBER_VAL, -); break;
             case OP_MULTIPLY: BINARY_OP(NUMBER_VAL, *); break;
             case OP_DIVIDE:   BINARY_OP(NUMBER_VAL, /); break;
@@ -151,6 +188,12 @@ static InterpretResult run() {
 #undef BINARY_OP
 }
 
+/*
+    I think he starts on purpose here at the VM
+    That's why in main he starts with interpret
+    that way he can ensure that all the objects
+    that he adds on to the stack are always avaialble
+ */
 InterpretResult interpret(const char *source) {
     Chunk chunk;
     /*
